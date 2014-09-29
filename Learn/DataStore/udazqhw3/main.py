@@ -24,6 +24,10 @@ import os
 template_dir = os.path.join(os.path.dirname(__file__), 'templates')
 jinja_env = jinja2.Environment(loader = jinja2.FileSystemLoader(template_dir), autoescape=True)
 
+def render_str(template, **params):
+    t = jinja_env.get_template(template)
+    return t.render(params)
+
 def blog_key(name = "default"):
     return db.Key.from_path('blogs', name)
 
@@ -44,14 +48,15 @@ class Blog(db.Model):
     blog_created = db.DateTimeProperty(auto_now_add = True)
     blog_lastModify = db.DateTimeProperty(auto_now_add = True)
 
-    #def render(self):
-    #    self._render_text = self.blog_content.replace('\n', <br>)
-    #    return self.render_str("sing_blog.html", p = self)
+    def render(self):
+        self._render_text = self.blog_content.replace('\n', '<br>')
+        return render_str("post.html", blog = self)
 
 class MainHandler(Handler):
     def render_front(self):
         blogs = db.GqlQuery("SELECT * FROM Blog "
-                            "ORDER BY blog_id DESC")
+                            "ORDER BY blog_created DESC")
+
         self.render("main.html", blogs=blogs)
 
     def get(self):
@@ -59,29 +64,21 @@ class MainHandler(Handler):
 
 class WriteHandler(Handler):
     def render_front(self, blog_title="", blog_content="", blog_error=""):
-        blogs = db.GqlQuery("SELECT * FROM Blog "
-                            "ORDER BY blog_id DESC")
         self.render("write.html", blog_title=blog_title,
-                    content=blog_content, error=blog_error)
-
-    def back_to_main(self):
-        blogs = db.GqlQuery("SELECT * FROM Blog "
-                            "ORDER BY blog_id DESC")
-        self.render("main.html", blogs=blogs)
+                    blog_content=blog_content, error=blog_error)
 
     def get(self):
         self.render_front()
     def post(self):
         pass
-        blog_title = self.request.get("blog_title")
-        blog_content = self.request.get("blog_content")
+        blog_title = self.request.get("subject")
+        blog_content = self.request.get("content")
 
-        if blog_title:
-            b = Blog(blog_title=blog_title, blog_content=blog_content)
-            b_key = b.put()
+        if blog_title and blog_content:
+            b = Blog(parent=blog_key(), blog_title=blog_title, blog_content=blog_content)
+            b.put()
 
-            self.redirect("/blog/%d" % b_key.id())
-            #self.back_to_main()
+            self.redirect("/blog/%s" % str(b.key().id()))
 
         else:
             error = "we need a title for your blog!"
@@ -89,11 +86,17 @@ class WriteHandler(Handler):
 
 class Permalink(Handler):
     def get(self, blog_id):
-        cur_blog = Blog.get_by_id(int(blog_id))
+        key = db.Key.from_path('Blog', int(blog_id), parent=blog_key())
+        cur_blog = db.get(key)
+
+        if not cur_blog:
+            self.error(404)
+            return
+
         self.render("sing_blog.html", blog=cur_blog)
 
 app = webapp2.WSGIApplication([
-                                ('/blog', MainHandler),
-                                ('/newpost', WriteHandler),
-                                ('/blog/(\d+)', Permalink)
+                                ('/blog/?', MainHandler),
+                                ('/blog/newpost', WriteHandler),
+                                ('/blog/([0-9]+)', Permalink)
                               ], debug=True)

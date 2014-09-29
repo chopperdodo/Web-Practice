@@ -1,33 +1,22 @@
-<!DOCTYPE html>
+{% extends "base.html" %}
 
-<html>
+{% block content %}
+    <h2>new post</h2>
 
-    <head>
-        <title>blog</title>
-    </head>
+    <form method="post">
+        <label>
+            <div>subject</div>
+            <input type="text" name="subject" value={{blog_title}}>
+        </label>
 
-    <body>
-        <h1> CS 253 Blog </h1>
+        <label>
+            <div>content</div>
+            <textarea name="content">{{blog_content}}</textarea>
+        </label>
 
-        <h2>new post</h2>
+        <div class="error">{{error}}</div>
 
-        <form method="post">
-            <label>
-                <div>subject</div>
-                <input type="text" name="blog_title" value="{{blog_title}}">
-            </label>
+        <input type="submit" value="submit">
+    </form>
+{% endblock %}
 
-            <label>
-                <div>blog</div>
-                <textarea name="blog_content">{{content}}</textarea>
-            </label>
-
-            <div class="error">{{error}}</div>
-
-            <input type="submit" value="submit">
-        </form>
-
-    </body>
-
-
-</html>

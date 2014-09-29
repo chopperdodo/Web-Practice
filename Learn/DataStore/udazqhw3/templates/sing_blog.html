@@ -1,24 +1,5 @@
-<!DOCTYPE html>
+{% extends "base.html" %}
 
-<html>
-
-    <head>
-        <title>blog</title>
-    </head>
-
-    <body>
-        <h1> CS 253 Blog </h1>
-    
-        <div>
-            <div> {{blog.blog_title}}</div>
-            <hr>
-            <div> {{blog.blog_content}}</div>
-            <br>
-            <br>
-        </div>
-    </body>
-
-    
-
-</html>
-
+{% block content %}
+    {{blog.render() | safe}}
+{% endblock %}
